@@ -110,6 +110,11 @@ export class EditService extends BaseEditService<MyEvent> {
         TaskId: this.schedulerEvents.length + 1,
       });
       console.log(this.schedulerEvents);
+    } else if (action === UPDATE_ACTION) {
+      const index = this.schedulerEvents.findIndex(
+        (e) => e.TaskID === data?.TaskID
+      );
+      this.schedulerEvents[index] = data[0];
     }
 
     return of(this.schedulerEvents);
