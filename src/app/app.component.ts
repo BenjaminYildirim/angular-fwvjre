@@ -69,6 +69,7 @@ enum CrudOperation {
 export class AppComponent implements OnInit {
   public selectedDate: Date = new Date('2013-06-10T00:00:00');
   public formGroup: FormGroup;
+  selectedAbId: number;
 
   public group: any = {
     resources: ['Abs'],
@@ -110,6 +111,8 @@ export class AppComponent implements OnInit {
   }: SlotClickEvent
    */
 
+    this.selectedAbId = event.resources[0].value;
+
     this.formGroup = this.formBuilder.group({
       Start: [event.start, Validators.required],
       End: [event.end, Validators.required],
@@ -120,7 +123,7 @@ export class AppComponent implements OnInit {
       Description: new FormControl(''),
       RecurrenceRule: new FormControl(),
       RecurrenceID: new FormControl(),
-      abId: new FormControl(event.resources[0].value),
+      //abId: new FormControl(event.resources[0].value),
     });
 
     event.sender.addEvent(this.formGroup);
@@ -199,7 +202,7 @@ export class AppComponent implements OnInit {
     mode,
   }: SaveEvent): void {
     if (formGroup.valid) {
-      const formValue = formGroup.value;
+      const formValue = { ...formGroup.value, abId: this.selectedAbId };
 
       if (isNew) {
         this.editService.create(formValue);
