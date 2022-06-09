@@ -12,4 +12,5 @@ export interface MyEvent {
   RecurrenceID?: number;
   RecurrenceRule?: string;
   abId?: number;
+  cat?: number;
 }

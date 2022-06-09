@@ -19,6 +19,7 @@ import { filter } from 'rxjs/operators';
 import { EditMode, CrudOperation } from '@progress/kendo-angular-scheduler';
 
 import { EditService } from './edit.service';
+import { error } from '@angular/compiler/src/util';
 
 /**
  * NOTE: Enums declaration here is for demo compilation purposes only!
@@ -40,6 +41,16 @@ enum CrudOperation {
 }
 */
 
+const intersects = (
+  startTime1: Date,
+  endTime1: Date,
+  startTime2: Date,
+  endTime2: Date
+) =>
+  (startTime1 < startTime2 && endTime1 > endTime2) ||
+  (startTime2 <= startTime1 && startTime1 < endTime2) ||
+  (startTime2 < endTime1 && endTime1 <= endTime2);
+
 @Component({
   selector: 'my-app',
   template: `
@@ -58,16 +69,16 @@ enum CrudOperation {
         (remove)="removeHandler($event)"
         (dragEnd)="dragEndHandler($event)"
         (resizeEnd)="resizeEndHandler($event)"
-        style="height: 600px;"
+        
     >
-        <kendo-scheduler-week-view startTime="07:00">
-        </kendo-scheduler-week-view>
+    <kendo-scheduler-day-view startTime="08:00" endTime="17:00">
+    </kendo-scheduler-day-view>
 
     </kendo-scheduler>
     `,
 })
 export class AppComponent implements OnInit {
-  public selectedDate: Date = new Date('2013-06-10T00:00:00');
+  public selectedDate: Date = new Date('2022-06-09T00:00:00');
   public formGroup: FormGroup;
   selectedAbId: number;
 
@@ -80,6 +91,8 @@ export class AppComponent implements OnInit {
     {
       name: 'Abs',
       data: [
+        { text: 'Betrieb', value: 3, color: '#6ec3fa' },
+        { text: 'BB', value: 4, color: '#fr8a' },
         { text: 'AB 1', value: 1, color: '#6eb3fa' },
         { text: 'AB 2', value: 2, color: '#f58a8a' },
       ],
@@ -204,14 +217,52 @@ export class AppComponent implements OnInit {
     if (formGroup.valid) {
       const formValue = { ...formGroup.value, abId: this.selectedAbId };
 
+      
+
       if (isNew) {
-        this.editService.create(formValue);
+        console.log('isNew');
+        if(!this.occupiedSlot(formValue)) {
+          this.editService.create(formValue);
+        }
       } else {
         this.handleUpdate(dataItem, formValue, mode);
       }
+      
 
       this.closeEditor(sender);
     }
+  }
+
+  private occupiedSlot(args: any): boolean {
+    let occupied = false;
+
+    this.editService.events.subscribe({
+      next: (events) => {
+        events.find((e) => {
+          console.log(e);
+          if (
+            e !== args.dataItem &&
+            intersects(args.start, args.end, e.Start, e.End) &&
+            (e.cat === 1 || e.cat === 2)
+          ) {
+            occupied = true;
+            return true;
+          }
+        });
+      },
+      error: (err) => {
+        console.log(err.message);
+      },
+    });
+    /*
+    this.editService.events.find(e => {
+        if (e !== args.dataItem && intersects(args.start, args.end, e.start, e.end) && (e.cat === 1 || e.cat === 2)) {
+            occupied = true;
+            return true;
+        }
+    });
+*/
+    return occupied;
   }
 
   public dragEndHandler({ sender, event, start, end, isAllDay }): void {
